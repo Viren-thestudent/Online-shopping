@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }} | Crochet Store</title>
+</head>
+
+<body>
+
+    <h1>{{ product.name }}</h1>
+
+    {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.name }}" width="300">
+    {% endif %}
+
+    <h2>₹{{ product.price }}</h2>
+
+    <h3>Description</h3>
+    <p>{{ product.description }}</p>
+
+    <h3>Stock</h3>
+    <p>{{ product.stock }} available</p>
+    <br>
+
+    <a href="{% url 'add_to_cart' product.id %}"
+   class="back-button">
+    🛒 Add to Cart
+    </a>
+
+    <br><br>
+
+    <a href="{% url 'home' %}">
+        ← Back to Home
+    </a>
+
+</body>
+</html>

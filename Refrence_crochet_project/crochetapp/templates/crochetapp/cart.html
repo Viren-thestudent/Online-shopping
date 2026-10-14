@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My Cart | KnotsofJoy</title>
+
+    <style>
+        /* Quantity Box */
+.quantity-box {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-top: 12px;
+}
+
+.quantity-box a {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2bfb1;
+    border-radius: 50%;
+    text-decoration: none;
+    color: #704638;
+    background: #fff5f0;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.quantity-box a:hover {
+    background: #ead1c7;
+}
+
+.quantity-box span {
+    font-weight: bold;
+    font-size: 16px;
+    color: #704638;
+}
+
+/* Remove Button */
+.remove-btn {
+    text-decoration: none;
+    font-size: 20px;
+    margin-left: 10px;
+    color: #b87868;
+}
+
+.remove-btn:hover {
+    color: #965d50;
+}
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5e8df;
+            color: #704638;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: #fffaf7;
+            padding: 22px 6%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 12px rgba(112, 70, 56, 0.10);
+        }
+
+        .brand {
+            font-family: Georgia, serif;
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .continue-top {
+            color: #704638;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* MAIN */
+        .container {
+            max-width: 1150px;
+            margin: 45px auto;
+            padding: 0 25px;
+        }
+
+        .page-title {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .page-title h1 {
+            font-family: Georgia, serif;
+            font-size: 42px;
+            margin: 0 0 8px;
+        }
+
+        .page-title p {
+            color: #9b7064;
+            font-size: 17px;
+        }
+
+        /* LAYOUT */
+        .cart-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        /* PRODUCT CARD */
+        .cart-item {
+            background: #fffaf7;
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            box-shadow: 0 5px 20px rgba(112, 70, 56, 0.10);
+        }
+
+        .product-image {
+            width: 145px;
+            height: 145px;
+            object-fit: cover;
+            border-radius: 15px;
+            background: #ead1c7;
+        }
+
+        .product-info {
+            flex: 1;
+        }
+
+        .product-info h2 {
+            font-family: Georgia, serif;
+            margin: 0 0 12px;
+            font-size: 23px;
+        }
+
+        .product-price {
+            font-size: 17px;
+            margin: 7px 0;
+        }
+
+        .quantity {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 8px 15px;
+            border: 1px solid #e2bfb1;
+            border-radius: 20px;
+            color: #704638;
+            background: #fff5f0;
+        }
+
+        .item-total {
+            font-size: 20px;
+            font-weight: bold;
+            min-width: 90px;
+            text-align: right;
+        }
+
+        /* SUMMARY */
+        .summary {
+            background: #fffaf7;
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: 0 5px 20px rgba(112, 70, 56, 0.10);
+            position: sticky;
+            top: 20px;
+        }
+
+        .summary h2 {
+            font-family: Georgia, serif;
+            font-size: 25px;
+            margin-top: 0;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 18px 0;
+            color: #80584b;
+        }
+
+        .summary hr {
+            border: none;
+            border-top: 1px solid #ead1c7;
+            margin: 22px 0;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .checkout-btn {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 14px;
+            margin-top: 25px;
+            background: #b87868;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .checkout-btn:hover {
+            background: #965d50;
+        }
+
+        .continue-btn {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 13px;
+            margin-top: 12px;
+            background: #ead1c7;
+            color: #704638;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        /* FEATURES */
+        .features {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #ead1c7;
+            font-size: 13px;
+            text-align: center;
+            color: #80584b;
+        }
+
+        .feature {
+            width: 32%;
+        }
+
+        /* EMPTY CART */
+        .empty-cart {
+            background: #fffaf7;
+            border-radius: 20px;
+            padding: 70px 30px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(112, 70, 56, 0.10);
+        }
+
+        .empty-cart .icon {
+            font-size: 60px;
+        }
+
+        .empty-cart h2 {
+            font-family: Georgia, serif;
+            font-size: 28px;
+        }
+
+        /* MOBILE */
+        @media (max-width: 800px) {
+
+            .cart-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .cart-item {
+                flex-wrap: wrap;
+            }
+
+            .product-image {
+                width: 110px;
+                height: 110px;
+            }
+
+            .item-total {
+                width: 100%;
+                text-align: left;
+            }
+
+            .summary {
+                position: static;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <div class="navbar">
+
+        <div class="brand">
+            🧶 KnotsofJoy
+        </div>
+
+        <a href="{% url 'home' %}" class="continue-top">
+            ← Continue Shopping
+        </a>
+
+    </div>
+
+
+    <div class="container">
+
+        <!-- TITLE -->
+        <div class="page-title">
+
+            <h1>🛒 My Cart ♡</h1>
+
+            <p>Good things are always better together</p>
+
+        </div>
+
+
+        {% if cart_items %}
+
+        <div class="cart-layout">
+
+            <!-- LEFT SIDE -->
+            <div>
+
+                {% for item in cart_items %}
+
+                <div class="cart-item">
+
+                    <!-- IMAGE -->
+                    {% if item.product.image %}
+
+                        <img
+                            src="{{ item.product.image.url }}"
+                            alt="{{ item.product.name }}"
+                            class="product-image"
+                        >
+
+                    {% else %}
+
+                        <div class="product-image"></div>
+
+                    {% endif %}
+
+
+                    <!-- PRODUCT INFORMATION -->
+                    <div class="product-info">
+
+                        <h2>
+                            {{ item.product.name }}
+                        </h2>
+
+                        <p class="product-price">
+                            Price: ₹{{ item.product.price }}
+                        </p>
+
+                        <div class="quantity-box">
+
+                            <a href="{% url 'decrease_quantity' item.id %}">−</a>
+
+                            <span>{{ item.quantity }}</span>
+
+                            <a href="{% url 'increase_quantity' item.id %}">+</a>
+
+                            </div>
+
+                            <a href="{% url 'remove_from_cart' item.id %}" class="remove-btn">
+    🗑️
+                            </a>
+
+                    </div>
+
+
+                    <!-- ITEM TOTAL -->
+                    <div class="item-total">
+
+                        ₹{{ item.product.price }}
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+
+            <!-- RIGHT SIDE SUMMARY -->
+            <div class="summary">
+
+                <h2>
+                    Cart Summary ♡
+                </h2>
+
+
+                <div class="summary-row">
+
+                    <span>
+                        Items
+                    </span>
+
+                    <span>
+                        {{ cart_items|length }}
+                    </span>
+
+                </div>
+
+
+                <div class="summary-row">
+
+                    <span>
+                        Shipping
+                    </span>
+
+                    <span>
+                        Free
+                    </span>
+
+                </div>
+
+
+                <hr>
+
+
+                <div class="total-row">
+
+                    <span>
+                        Total
+                    </span>
+
+                    <span>
+                        ₹{{ total }}
+                    </span>
+
+                </div>
+
+
+                <a href="{% url 'checkout' %}" class="checkout-btn">
+                    Proceed to Checkout →
+                </a>
+
+
+                <a href="{% url 'home' %}" class="continue-btn">
+                    ← Continue Shopping
+                </a>
+
+
+                <!-- FEATURES -->
+                <div class="features">
+
+                    <div class="feature">
+                        🚚<br>
+                        Free Shipping
+                    </div>
+
+                    <div class="feature">
+                        🔒<br>
+                        Secure
+                    </div>
+
+                    <div class="feature">
+                        ♡<br>
+                        Handmade
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% else %}
+
+        <!-- EMPTY CART -->
+        <div class="empty-cart">
+
+            <div class="icon">
+                🧶
+            </div>
+
+            <h2>
+                Your cart is empty
+            </h2>
+
+            <p>
+                Add something beautiful to your cart.
+            </p>
+
+            <a href="{% url 'home' %}" class="checkout-btn"
+               style="max-width:220px; margin:25px auto 0;">
+                Start Shopping
+            </a>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</body>
+</html>

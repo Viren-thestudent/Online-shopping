@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Login | Crochet Store</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+
+            background: #f5e8df;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-container {
+            width: 400px;
+            background: rgba(255, 255, 255, 0.95);
+
+            padding: 40px;
+            border-radius: 22px;
+
+            box-shadow: 0 8px 30px rgba(120, 70, 50, 0.18);
+
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 55px;
+            margin-bottom: 5px;
+        }
+
+        h1 {
+            margin: 5px 0;
+            color: #704638;
+            font-family: Georgia, serif;
+        }
+
+        .subtitle {
+            color: #9b7064;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            color: #704638;
+            font-weight: bold;
+            margin-bottom: 7px;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px;
+
+            border: 1px solid #d9b8aa;
+            border-radius: 10px;
+
+            font-size: 15px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #b87868;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 13px;
+
+            border: none;
+            border-radius: 10px;
+
+            background: #b87868;
+            color: white;
+
+            font-size: 16px;
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+        .login-btn:hover {
+            background: #965d50;
+        }
+
+        .error {
+            color: #c0392b;
+            margin-bottom: 15px;
+        }
+
+        .back {
+            display: inline-block;
+            margin-top: 20px;
+
+            color: #704638;
+            text-decoration: none;
+        }
+
+        .back:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-container">
+
+    <div class="logo">🧶</div>
+
+    <h1>KnotsofJoy</h1>
+
+    <p class="subtitle">
+        Handmade with love ❤️
+    </p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p class="error">{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        <div class="input-group">
+            <label>Username</label>
+            <input
+                type="text"
+                name="username"
+                placeholder="Enter your username"
+                required
+            >
+        </div>
+
+        <div class="input-group">
+            <label>Password</label>
+            <input
+                type="password"
+                name="password"
+                placeholder="Enter your password"
+                required
+            >
+        </div>
+
+        <button type="submit" class="login-btn">
+            Login
+        </button>
+
+    </form>
+
+    <a href="{% url 'home' %}" class="back">
+        ← Back to Store
+    </a>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Order Confirmed | KnotsofJoy</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background: #f5e8df;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #704638;
+        }
+
+        .success-box {
+            width: 500px;
+            max-width: 90%;
+            background: #fffaf7;
+            padding: 45px;
+            border-radius: 22px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(120, 70, 50, 0.15);
+        }
+
+        .icon {
+            font-size: 65px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-family: Georgia, serif;
+            color: #704638;
+            margin-bottom: 10px;
+        }
+
+        .message {
+            color: #9b7064;
+            font-size: 16px;
+        }
+
+        .order-number {
+            margin: 25px 0;
+            padding: 15px;
+            background: #f5e8df;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        .total {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .home-btn {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 13px 25px;
+            background: #b87868;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .home-btn:hover {
+            background: #965d50;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="success-box">
+
+    <div class="icon">🎉</div>
+
+    <h1>Order Confirmed!</h1>
+
+    <p class="message">
+        Thank you for shopping with KnotsofJoy 🧶❤️
+    </p>
+
+    <div class="order-number">
+        Order #{{ order.id }}
+    </div>
+
+    <div class="total">
+        Total: ₹{{ order.total_price }}
+    </div>
+
+    <p>
+        Your order has been placed successfully.
+    </p>
+
+    <a href="{% url 'home' %}" class="home-btn">
+        ← Continue Shopping
+    </a>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Checkout | KnotsofJoy</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5e8df;
+            color: #704638;
+        }
+
+        .navbar {
+            background: #fffaf7;
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(120, 70, 50, 0.08);
+        }
+
+        .brand {
+            font-size: 26px;
+            font-weight: bold;
+            color: #704638;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: #704638;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-family: Georgia, serif;
+            margin-bottom: 30px;
+        }
+
+        .checkout-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+        }
+
+        .box {
+            background: #fffaf7;
+            padding: 30px;
+            border-radius: 18px;
+            box-shadow: 0 5px 20px rgba(120, 70, 50, 0.10);
+        }
+
+        .box h2 {
+            margin-top: 0;
+            color: #704638;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: bold;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #d9b8aa;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            background: white;
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: #b87868;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #ead8d0;
+        }
+
+        .total {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #d9b8aa;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .place-order {
+            width: 100%;
+            margin-top: 25px;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: #b87868;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .place-order:hover {
+            background: #965d50;
+        }
+
+        @media (max-width: 700px) {
+            .checkout-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .navbar {
+                padding: 15px 20px;
+            }
+
+            .container {
+                margin: 20px auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <div class="brand">🧶 KnotsofJoy</div>
+
+    <a href="{% url 'cart' %}" class="back-link">
+        ← Back to Cart
+    </a>
+</div>
+
+<div class="container">
+
+    <h1>Checkout 🛍️</h1>
+
+    <div class="checkout-layout">
+
+        <!-- DELIVERY DETAILS -->
+        <div class="box">
+
+            <h2>Delivery Details</h2>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="input-group">
+                    <label>Address</label>
+                    <textarea
+                        name="address"
+                        placeholder="Enter your full address"
+                        required></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label>City</label>
+                    <input
+                        type="text"
+                        name="city"
+                        placeholder="Enter city"
+                        required>
+                </div>
+
+                <div class="input-group">
+                    <label>State</label>
+                    <input
+                        type="text"
+                        name="state"
+                        placeholder="Enter state"
+                        required>
+                </div>
+
+                <div class="input-group">
+                    <label>Pincode</label>
+                    <input
+                        type="text"
+                        name="pincode"
+                        placeholder="Enter pincode"
+                        maxlength="10"
+                        required>
+                </div>
+
+                <button type="submit" class="place-order">
+                    Place Order 🛍️
+                </button>
+
+            </form>
+
+        </div>
+
+        <!-- ORDER SUMMARY -->
+        <div class="box">
+
+            <h2>Order Summary</h2>
+
+            {% for item in cart_items %}
+
+            <div class="order-item">
+                <span>
+                    {{ item.product.name }}
+                    × {{ item.quantity }}
+                </span>
+
+                <span>
+                    ₹{{ item.product.price }}
+                </span>
+            </div>
+
+            {% endfor %}
+
+            <div class="total">
+                <span>Total</span>
+                <span>₹{{ total }}</span>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
