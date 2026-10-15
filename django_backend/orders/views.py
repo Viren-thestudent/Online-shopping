@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.db.models import Prefetch, Sum
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -13,7 +11,7 @@ from users.models import User
 
 from .models import Order, OrderItem
 from .permissions import IsOrderAdmin
-from .insights import build_sales_insights
+from .insights import build_sales_insights, money
 from .serializers import (
     AdminOrderStatusSerializer,
     CreateOrderSerializer,
@@ -97,7 +95,7 @@ class AdminDashboardView(APIView):
         delivered_revenue = Order.objects.filter(
             status=Order.STATUS_DELIVERED,
             payment_status=Order.PAYMENT_STATUS_VERIFIED,
-        ).aggregate(total=Sum("total"))["total"] or Decimal("0.00")
+        ).aggregate(total=Sum("total"))["total"]
         recent_orders = Order.objects.select_related("customer")[:5]
 
         return Response(
@@ -106,7 +104,7 @@ class AdminDashboardView(APIView):
                     "total_products": Product.objects.count(),
                     "total_orders": Order.objects.count(),
                     "total_customers": User.objects.filter(is_admin=False).count(),
-                    "delivered_revenue": str(delivered_revenue),
+                    "delivered_revenue": money(delivered_revenue),
                 },
                 "recent_orders": DashboardOrderSerializer(recent_orders, many=True).data,
             }

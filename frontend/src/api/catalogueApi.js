@@ -14,6 +14,12 @@ const getMessage = (payload, fallback) => {
   return fallback
 }
 
+// Leave this empty locally so Vite's dev proxy continues to serve /api and
+// /media. Render sets VITE_API_BASE_URL to the deployed Django service URL.
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '')
+export const backendUrl = (path) => `${API_BASE_URL}${path}`
+export const apiUrl = (path) => backendUrl(`/api${path}`)
+
 export async function apiRequest(path, options = {}) {
   const headers = new Headers(options.headers || {})
   const token = localStorage.getItem('token')
@@ -22,7 +28,7 @@ export async function apiRequest(path, options = {}) {
   const isFormData = options.body instanceof FormData
   if (!isFormData && options.body !== undefined) headers.set('Content-Type', 'application/json')
 
-  const response = await fetch(`/api${path}`, { ...options, headers })
+  const response = await fetch(apiUrl(path), { ...options, headers })
   const responseText = await response.text()
   let payload
   try {
@@ -53,7 +59,7 @@ export const deleteProduct = (id) => catalogueRequest(`/products/${id}`, { metho
 export async function fetchProfile() {
   const token = localStorage.getItem('token')
   const headers = token ? { Authorization: `Bearer ${token}` } : {}
-  const response = await fetch('/api/auth/profile', { headers })
+  const response = await fetch(apiUrl('/auth/profile'), { headers })
   const payload = await response.json().catch(() => ({}))
   if (!response.ok) throw new Error(getMessage(payload, 'Unable to verify account access.'))
   return payload.user

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { apiUrl } from '../../api/catalogueApi'
 
 const getLoginErrorMessage = (data, status) => {
   if (typeof data === 'string' && data.trim() && !data.trim().startsWith('<')) return data.trim()
@@ -40,7 +41,7 @@ function LoginPage() {
     }
     setLoading(true)
     try {
-      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: form.email.trim(), password: form.password }) })
+      const response = await fetch(apiUrl('/auth/login'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: form.email.trim(), password: form.password }) })
       const responseText = await response.text()
       let data = {}
       try { data = responseText ? JSON.parse(responseText) : {} } catch { data = responseText }

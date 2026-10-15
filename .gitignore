@@ -1,0 +1,30 @@
+# Environment files and local secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Python-generated files and local environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+django_backend/venv/
+
+# Frontend dependencies and build output
+node_modules/
+dist/
+frontend/dist/
+
+# Runtime-uploaded media should use durable storage in production
+django_backend/media/
+django_backend/staticfiles/
+
+# Local/editor files
+.pytest_cache/
+.coverage
+.vscode/
+.idea/
+*.log

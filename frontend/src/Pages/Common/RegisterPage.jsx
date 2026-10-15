@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { apiUrl } from '../../api/catalogueApi'
 
 const getRegistrationErrorMessage = (data, status) => {
   if (typeof data === 'string' && data.trim()) return data.trim()
@@ -47,7 +48,7 @@ function RegisterPage() {
     }
     setLoading(true)
     try {
-      const response = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.name.trim(), email: form.email.trim(), password: form.password }) })
+      const response = await fetch(apiUrl('/auth/register'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.name.trim(), email: form.email.trim(), password: form.password }) })
       const responseText = await response.text()
       let data = {}
       try { data = responseText ? JSON.parse(responseText) : {} } catch { data = responseText }

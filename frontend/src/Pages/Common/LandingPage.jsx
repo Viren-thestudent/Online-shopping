@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchCategories, fetchProducts, fetchProfile } from '../../api/catalogueApi'
+import { backendUrl, fetchCategories, fetchProducts, fetchProfile } from '../../api/catalogueApi'
 import { cartItemCount, formatPrice, getCart, saveCart } from '../../data/catalogue'
 
 const categoryArt = {
-  'Phone Covers': { image: '/media/products/Birds_Crochet_Phone_Case.jpg', position: 'center' },
+  'Phone Covers': { image: backendUrl('/media/products/Birds_Crochet_Phone_Case.jpg'), position: 'center' },
   'Crochet Flowers': { image: '/assets/knots-of-joy-tulip-bouquet.jpg', position: 'center 38%' },
   'Keychains & Charms': { image: '/assets/knots-of-joy-tulip-bouquet.jpg', position: 'center 45%' },
   'Gifts & Accessories': { image: '/assets/knots-of-joy-tulip-bouquet.jpg', position: 'center 62%' },
