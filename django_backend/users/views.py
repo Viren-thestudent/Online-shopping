@@ -48,6 +48,7 @@ def create_access_token(user: User) -> str:
 
 
 class RegisterView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -80,6 +81,7 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -96,7 +98,11 @@ class LoginView(APIView):
         if user is None or not user.check_password(data["password"]):
             return error_response("Invalid email or password", status.HTTP_401_UNAUTHORIZED)
 
-        return success_response("Login successful", token=create_access_token(user))
+        return success_response(
+            "Login successful",
+            token=create_access_token(user),
+            user={"name": user.name, "email": user.email, "is_admin": user.is_admin},
+        )
 
 
 class ProfileView(APIView):
@@ -109,6 +115,7 @@ class ProfileView(APIView):
             user={
                 "name": request.user.name,
                 "email": request.user.email,
+                "is_admin": request.user.is_admin,
             },
         )
 

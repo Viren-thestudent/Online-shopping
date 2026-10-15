@@ -16,6 +16,7 @@ class User(models.Model):
     name = models.CharField(max_length=120)
     email = models.EmailField(unique=True, db_index=True)
     password = models.CharField(max_length=128)
+    is_admin = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
