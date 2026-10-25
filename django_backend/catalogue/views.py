@@ -8,6 +8,7 @@ from users.views import ORMJWTAuthentication
 
 from .models import Category, Product
 from .permissions import IsCatalogueAdmin
+from .recommendation_service import recommender
 from .serializers import CategorySerializer, ProductSerializer
 
 
@@ -118,3 +119,45 @@ class ProductDetailView(CatalogueAPIView):
             return Response({"message": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
         product.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProductRecommendationsView(APIView):
+    """Return live, content-similar products for an authenticated customer."""
+
+    authentication_classes = [ORMJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        raw_product_id = request.query_params.get("product_id")
+        if raw_product_id is None:
+            return Response(
+                {"message": "product_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            product_id = int(raw_product_id)
+        except (TypeError, ValueError):
+            return Response(
+                {"message": "product_id must be a valid integer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if product_id < 1:
+            return Response(
+                {"message": "product_id must be a positive integer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            products = recommender.recommend(product_id)
+        except Product.DoesNotExist:
+            return Response(
+                {"message": "Product not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = ProductSerializer(
+            products,
+            many=True,
+            context={"request": request},
+        )
+        return Response(serializer.data)

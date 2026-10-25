@@ -20,10 +20,13 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 from django.views.static import serve
 
+from catalogue.views import ProductRecommendationsView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('users.urls')),
     path('api/catalogue/', include('catalogue.urls')),
+    path('api/ml/recommendations/', ProductRecommendationsView.as_view()),
     path('api/orders/', include('orders.urls')),
 ]
 

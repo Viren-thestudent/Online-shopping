@@ -52,6 +52,9 @@ export const updateCategory = (id, data) => catalogueRequest(`/categories/${id}`
 export const deleteCategory = (id) => catalogueRequest(`/categories/${id}`, { method: 'DELETE' })
 export const fetchProducts = () => catalogueRequest('/products')
 export const fetchProduct = (id) => catalogueRequest(`/products/${id}`)
+export const fetchRecommendations = (productId) => apiRequest(
+  `/ml/recommendations/?product_id=${encodeURIComponent(productId)}`,
+)
 export const createProduct = (formData) => catalogueRequest('/products', { method: 'POST', body: formData })
 export const updateProduct = (id, formData) => catalogueRequest(`/products/${id}`, { method: 'PATCH', body: formData })
 export const deleteProduct = (id) => catalogueRequest(`/products/${id}`, { method: 'DELETE' })
