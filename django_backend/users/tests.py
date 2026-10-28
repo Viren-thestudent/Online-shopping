@@ -76,6 +76,19 @@ class EcommerceAPITestCase(TestCase):
         )
         return response
 
+    def test_login_returns_top_level_access_token_and_account_metadata(self):
+        response = self.client.post(
+            "/api/auth/login",
+            {"email": self.customer.email, "password": "correct-password"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.data["token"], str)
+        self.assertTrue(response.data["token"])
+        self.assertEqual(response.data["user"]["email"], self.customer.email)
+        self.assertFalse(response.data["user"]["is_admin"])
+
     def create_order(
         self,
         customer,

@@ -66,6 +66,22 @@ class ContentBasedRecommendationTests(TestCase):
         self.assertIn("category_name", response.data[0])
         self.assertIn("image_url", response.data[0])
 
+    def test_product_image_url_uses_media_path_and_request_host(self):
+        product = self.create_product(
+            "Tracked Product Photo",
+            "A product with a committed media file.",
+            self.phone_category,
+            image="products/Birds_Crochet_Phone_Case.jpg",
+        )
+
+        response = self.client.get(f"/api/catalogue/products/{product.pk}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data["image_url"],
+            "http://localhost/media/products/Birds_Crochet_Phone_Case.jpg",
+        )
+
     def test_unavailable_and_out_of_stock_products_are_not_recommended(self):
         unavailable = self.create_product(
             "Unavailable Phone Cover",

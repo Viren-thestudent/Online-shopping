@@ -46,6 +46,7 @@ function LoginPage() {
       let data = {}
       try { data = responseText ? JSON.parse(responseText) : {} } catch { data = responseText }
       if (!response.ok) throw new Error(getLoginErrorMessage(data, response.status))
+      if (typeof data === 'string') throw new Error('The login service returned a non-JSON response. Check the Django API deployment.')
       if (!data.token) throw new Error('Login succeeded, but the server did not return a token. Please try again.')
       localStorage.setItem('token', data.token)
       navigate('/user-home', { replace: true })

@@ -15,8 +15,11 @@ const getMessage = (payload, fallback) => {
 }
 
 // Leave this empty locally so Vite's dev proxy continues to serve /api and
-// /media. Render sets VITE_API_BASE_URL to the deployed Django service URL.
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '')
+// /media. Production builds use Render's environment value, with the existing
+// backend URL as a safe fallback if the static service was built without it.
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''
+const productionApiBaseUrl = 'https://crochet-online-shopping-in.onrender.com'
+export const API_BASE_URL = (configuredApiBaseUrl || (import.meta.env.PROD ? productionApiBaseUrl : '')).replace(/\/+$/, '')
 export const backendUrl = (path) => `${API_BASE_URL}${path}`
 export const apiUrl = (path) => backendUrl(`/api${path}`)
 
