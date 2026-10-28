@@ -18,8 +18,11 @@ node_modules/
 dist/
 frontend/dist/
 
-# Runtime-uploaded media should use durable storage in production
-django_backend/media/
+# Runtime-uploaded media should use durable storage in production. The existing
+# product photos are source assets and must remain visible for deployment.
+django_backend/media/*
+!django_backend/media/products/
+!django_backend/media/products/*
 django_backend/staticfiles/
 
 # Local/editor files

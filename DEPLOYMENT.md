@@ -11,8 +11,10 @@ passwords, payment credentials, or secret values.
 
 ## Render settings
 
-Create a Blueprint from the repository, or create the services manually using
-these values:
+Do not apply `render.yaml` as a new Blueprint for the already deployed
+services: its resource names (`knot-bloom-api`, `knot-bloom-frontend`, and
+`knot-bloom-db`) differ from the existing public services and could create
+duplicates. Update the existing Render services manually using these values:
 
 - Backend build command: `./build.sh`
 - Backend start command: `python -m gunicorn config.wsgi:application`
@@ -21,11 +23,27 @@ these values:
 - Frontend publish directory: `frontend/dist`
 - Frontend rewrite: `/*` to `/index.html`
 
+For the existing deployment in this project, use:
+
+- Existing backend service URL: `https://crochet-online-shopping-in.onrender.com`
+- Existing frontend service URL: `https://knot-and-bloom-in.onrender.com`
+- Frontend `VITE_API_BASE_URL`: `https://crochet-online-shopping-in.onrender.com`
+- Backend `FRONTEND_URL`: `https://knot-and-bloom-in.onrender.com`
+- Backend health check: `/admin/login/`
+
 The Blueprint connects the frontend's `VITE_API_BASE_URL` to the backend's
 public Render URL and connects the backend's `FRONTEND_URL` to the frontend's
 public Render URL. The backend also accepts its automatic
 `RENDER_EXTERNAL_HOSTNAME` value. Add any custom frontend or backend domains to
 the corresponding Render environment values when they are introduced.
+
+For production email verification, configure these names on the existing
+backend service using private provider values: `EMAIL_BACKEND`,
+`DEFAULT_FROM_EMAIL`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`,
+`EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, and `EMAIL_USE_SSL`. Never commit the
+password or paste it into chat. If these values are absent, administrator
+verification email delivery remains unavailable; the local development link
+is intentionally disabled when `DEBUG=False`.
 
 ## Secrets and local development
 
