@@ -67,3 +67,9 @@ export async function fetchProfile() {
   if (!response.ok) throw new Error(getMessage(payload, 'Unable to verify account access.'))
   return payload.user
 }
+
+export const requestEmailVerification = () => apiRequest('/auth/request-email-verification', { method: 'POST' })
+export const verifyEmail = (token) => apiRequest('/auth/verify-email', {
+  method: 'POST',
+  body: JSON.stringify({ token }),
+})

@@ -1,5 +1,17 @@
 const STORAGE_KEYS = { cart: 'loopluxe.cart' }
 
+export const PRODUCT_CATEGORIES = [
+  'Cover',
+  'Flower',
+  'Bags',
+  'Collection',
+  'Keychain',
+  'Toy Section',
+  'Headband',
+  'Diwali',
+  'Christmas',
+]
+
 const readJson = (key, fallback) => {
   try {
     const value = window.localStorage.getItem(key)

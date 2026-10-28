@@ -9,11 +9,12 @@ from .validators import validate_product_image
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
+    display_order = models.PositiveIntegerField(default=1000)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["name"]
+        ordering = ["display_order", "name"]
         verbose_name_plural = "categories"
 
     def __str__(self):

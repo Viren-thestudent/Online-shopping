@@ -20,13 +20,11 @@ class Order(models.Model):
         (STATUS_DELIVERED, "Delivered"),
         (STATUS_CANCELLED, "Cancelled"),
     )
-    # Keep the legacy COD value so historical rows remain readable, but new
-    # orders are created with the online FamPay/UPI method below.
     PAYMENT_COD = "cod"
     PAYMENT_ONLINE = "upi"
     PAYMENT_METHOD_CHOICES = (
         (PAYMENT_ONLINE, "UPI / FamPay"),
-        (PAYMENT_COD, "Cash on Delivery (legacy)"),
+        (PAYMENT_COD, "Cash on Delivery"),
     )
     PAYMENT_STATUS_PENDING = "pending"
     PAYMENT_STATUS_VERIFIED = "verified"
@@ -53,6 +51,8 @@ class Order(models.Model):
         null=True,
         blank=True,
     )
+    inventory_reserved = models.BooleanField(default=False)
+    inventory_released = models.BooleanField(default=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     total = models.DecimalField(
         max_digits=10,

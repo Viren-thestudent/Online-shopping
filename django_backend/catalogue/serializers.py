@@ -6,8 +6,8 @@ from .models import Category, Product
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ("id", "name", "description", "created_at", "updated_at")
-        read_only_fields = ("id", "created_at", "updated_at")
+        fields = ("id", "name", "description", "display_order", "created_at", "updated_at")
+        read_only_fields = ("id", "display_order", "created_at", "updated_at")
 
     def validate_name(self, value):
         name = value.strip()

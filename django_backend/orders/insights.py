@@ -40,6 +40,12 @@ def completed_sales_queryset():
     )
 
 
+def paid_sales_queryset():
+    return Order.objects.filter(payment_status=Order.PAYMENT_STATUS_VERIFIED).exclude(
+        status=Order.STATUS_CANCELLED,
+    )
+
+
 def build_weekly_sales(completed_orders):
     weekly = defaultdict(lambda: {"revenue": Decimal("0.00"), "quantity": 0})
     order_rows = completed_orders.values_list("created_at", "total")
@@ -124,6 +130,7 @@ def build_forecast(weekly_sales):
 
 def build_sales_insights():
     completed_orders = completed_sales_queryset()
+    paid_orders = paid_sales_queryset()
     completed_items = OrderItem.objects.filter(
         order__status__in=COMPLETED_ORDER_STATUSES,
         order__payment_status=Order.PAYMENT_STATUS_VERIFIED,
@@ -132,6 +139,7 @@ def build_sales_insights():
         status=Order.STATUS_DELIVERED,
         payment_status=Order.PAYMENT_STATUS_VERIFIED,
     ).aggregate(total=Sum("total"))["total"]
+    paid_revenue = paid_orders.aggregate(total=Sum("total"))["total"]
 
     best_selling = completed_items.values("product_id", "product_name").annotate(
         quantity_sold=Sum("quantity"),
@@ -159,6 +167,7 @@ def build_sales_insights():
 
     return {
         "summary": {
+            "paid_revenue": money(paid_revenue),
             "delivered_revenue": money(delivered_revenue),
             "completed_orders": completed_orders.count(),
             "completed_units": completed_items.aggregate(total=Sum("quantity"))["total"] or 0,

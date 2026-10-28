@@ -1,11 +1,5 @@
-from rest_framework.permissions import BasePermission
+from users.permissions import IsAuthorizedAdmin
 
 
-class IsCatalogueAdmin(BasePermission):
-    message = "Catalogue changes require an admin account."
-
-    def has_permission(self, request, view):
-        return bool(
-            getattr(request.user, "is_authenticated", False)
-            and getattr(request.user, "is_admin", False)
-        )
+class IsCatalogueAdmin(IsAuthorizedAdmin):
+    message = "Catalogue changes require the authorized, verified admin account."

@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import Prefetch, Sum
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -26,6 +27,28 @@ def order_queryset():
     return Order.objects.select_related("customer").prefetch_related(
         Prefetch("items", queryset=OrderItem.objects.select_related("product"))
     )
+
+
+def release_reserved_inventory(order):
+    """Return reserved stock once when an order is cancelled."""
+    if not order.inventory_reserved or order.inventory_released:
+        return
+
+    items = list(OrderItem.objects.filter(order_id=order.pk).values("product_id", "quantity"))
+    product_ids = {item["product_id"] for item in items if item["product_id"] is not None}
+    products = {
+        product.pk: product
+        for product in Product.objects.select_for_update().filter(pk__in=product_ids)
+    }
+    for item in items:
+        product = products.get(item["product_id"])
+        if product is None:
+            continue
+        product.stock += item["quantity"]
+        product.save(update_fields=["stock", "updated_at"])
+
+    order.inventory_released = True
+    order.save(update_fields=["inventory_released", "updated_at"])
 
 
 class OrderListCreateView(APIView):
@@ -104,6 +127,11 @@ class AdminDashboardView(APIView):
                     "total_products": Product.objects.count(),
                     "total_orders": Order.objects.count(),
                     "total_customers": User.objects.filter(is_admin=False).count(),
+                    "paid_revenue": money(
+                        Order.objects.filter(payment_status=Order.PAYMENT_STATUS_VERIFIED)
+                        .exclude(status=Order.STATUS_CANCELLED)
+                        .aggregate(total=Sum("total"))["total"]
+                    ),
                     "delivered_revenue": money(delivered_revenue),
                 },
                 "recent_orders": DashboardOrderSerializer(recent_orders, many=True).data,
@@ -124,14 +152,20 @@ class AdminOrderStatusView(APIView):
     permission_classes = [IsOrderAdmin]
 
     def patch(self, request, order_id):
-        try:
-            order = Order.objects.get(pk=order_id)
-        except Order.DoesNotExist:
-            return Response({"message": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+        with transaction.atomic():
+            try:
+                order = Order.objects.select_for_update().get(pk=order_id)
+            except Order.DoesNotExist:
+                return Response({"message": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = AdminOrderStatusSerializer(order, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+            serializer = AdminOrderStatusSerializer(order, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            # Checkout deducts stock atomically when the order is placed. A
+            # delivery transition therefore only changes status; it must not
+            # deduct the same quantities a second time, even on repeat PATCHes.
+            serializer.save()
+            if serializer.validated_data.get("status") == Order.STATUS_CANCELLED:
+                release_reserved_inventory(order)
         order = order_queryset().get(pk=order.pk)
         return Response(OrderSerializer(order, context={"request": request}).data)
 
@@ -141,13 +175,14 @@ class AdminPaymentStatusView(APIView):
     permission_classes = [IsOrderAdmin]
 
     def patch(self, request, order_id):
-        try:
-            order = Order.objects.get(pk=order_id)
-        except Order.DoesNotExist:
-            return Response({"message": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+        with transaction.atomic():
+            try:
+                order = Order.objects.select_for_update().get(pk=order_id)
+            except Order.DoesNotExist:
+                return Response({"message": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = AdminPaymentStatusSerializer(order, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+            serializer = AdminPaymentStatusSerializer(order, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
         order = order_queryset().get(pk=order.pk)
         return Response(OrderSerializer(order, context={"request": request}).data)

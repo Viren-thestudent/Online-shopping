@@ -1,7 +1,10 @@
 from datetime import timedelta
 from decimal import Decimal
+from io import StringIO
+from urllib.parse import parse_qs, urlparse
 
-from django.test import TestCase
+from django.core.management import call_command
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
@@ -17,7 +20,7 @@ class EcommerceAPITestCase(TestCase):
 
     def setUp(self):
         self.client = self.make_client()
-        self.admin = self.create_user("admin@example.com", is_admin=True)
+        self.admin = self.create_user("virendabhani@gmail.com", is_admin=True)
         self.customer = self.create_user("customer@example.com")
         self.other_customer = self.create_user("other@example.com")
         self.category = Category.objects.create(
@@ -54,7 +57,7 @@ class EcommerceAPITestCase(TestCase):
 
     @staticmethod
     def create_user(email, is_admin=False):
-        user = User(name=email.split("@")[0], email=email, is_admin=is_admin)
+        user = User(name=email.split("@")[0], email=email, is_admin=is_admin, email_verified=is_admin)
         user.set_password("correct-password")
         user.save()
         return user
@@ -160,7 +163,7 @@ class EcommerceAPITestCase(TestCase):
         self.assertEqual(categories.status_code, 200)
         self.assertEqual(products.status_code, 200)
         self.assertEqual(detail.status_code, 200)
-        self.assertEqual(len(categories.data), 6)
+        self.assertEqual(len(categories.data), 11)
         self.assertIn("Keychains", {category["name"] for category in categories.data})
         self.assertEqual(len(products.data), 2)
         self.assertEqual(detail.data["category_name"], "Keychains")
@@ -219,6 +222,42 @@ class EcommerceAPITestCase(TestCase):
         self.other_product.refresh_from_db()
         self.assertEqual(self.product.stock, 3)
         self.assertEqual(self.other_product.stock, 1)
+
+    def test_cod_checkout_does_not_require_payment_reference(self):
+        self.login_as(self.customer)
+        response = self.client.post(
+            "/api/orders/",
+            {
+                "customer_name": "COD Customer",
+                "phone": "9876543210",
+                "delivery_address": "12 Audit Street, Kolkata",
+                "payment_method": Order.PAYMENT_COD,
+                "items": [{"product_id": self.product.id, "quantity": 1}],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["payment_method"], Order.PAYMENT_COD)
+        self.assertEqual(response.data["payment_status"], Order.PAYMENT_STATUS_PENDING)
+        self.assertIsNone(response.data["payment_reference"])
+
+    def test_online_checkout_requires_payment_reference(self):
+        self.login_as(self.customer)
+        response = self.client.post(
+            "/api/orders/",
+            {
+                "customer_name": "Online Customer",
+                "phone": "9876543210",
+                "delivery_address": "12 Audit Street, Kolkata",
+                "payment_method": Order.PAYMENT_ONLINE,
+                "items": [{"product_id": self.product.id, "quantity": 1}],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("payment_reference", response.data)
 
     def test_checkout_rejects_invalid_input_duplicate_lines_and_insufficient_stock(self):
         self.login_as(self.customer)
@@ -453,6 +492,43 @@ class EcommerceAPITestCase(TestCase):
         )
         self.assertEqual(verified.status_code, 200)
         self.assertEqual(verified.data["payment_status"], Order.PAYMENT_STATUS_VERIFIED)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend", DEBUG=True)
+    def test_authorized_admin_requires_email_verification_before_admin_access(self):
+        self.admin.email_verified = False
+        self.admin.save(update_fields=["email_verified", "updated_at"])
+        self.login_as(self.admin)
+
+        blocked = self.client.get("/api/orders/admin/dashboard")
+        self.assertEqual(blocked.status_code, 403)
+
+        requested = self.client.post("/api/auth/request-email-verification")
+        self.assertEqual(requested.status_code, 200)
+        verification_url = requested.data["development_verification_url"]
+        token = parse_qs(urlparse(verification_url).query)["token"][0]
+
+        verified = self.client.post("/api/auth/verify-email", {"token": token}, format="json")
+        self.assertEqual(verified.status_code, 200)
+        self.assertEqual(self.client.get("/api/orders/admin/dashboard").status_code, 200)
+
+    @override_settings(DEBUG=True)
+    def test_prepare_authorized_admin_prints_local_link_without_verifying(self):
+        self.admin.email_verified = False
+        self.admin.save(update_fields=["email_verified", "updated_at"])
+        output = StringIO()
+
+        call_command(
+            "prepare_authorized_admin",
+            email="virendabhani@gmail.com",
+            stdout=output,
+        )
+
+        output_text = output.getvalue()
+        self.assertIn("http://127.0.0.1:8000/api/auth/verify-email?token=", output_text)
+        self.assertIn("Expires at:", output_text)
+        self.admin.refresh_from_db()
+        self.assertFalse(self.admin.email_verified)
+        self.assertTrue(self.admin.email_verification_token_hash)
 
     def test_unpaid_delivered_orders_are_excluded_from_dashboard_and_insights(self):
         unpaid = self.create_order(

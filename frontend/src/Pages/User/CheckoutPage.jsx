@@ -9,7 +9,7 @@ function CheckoutPage({ theme, onToggleTheme }) {
   const navigate = useNavigate()
   const [cart] = useState(() => getCart())
   const [products, setProducts] = useState([])
-  const [form, setForm] = useState({ customer_name: '', phone: '', delivery_address: '', payment_reference: '' })
+  const [form, setForm] = useState({ customer_name: '', phone: '', delivery_address: '', payment_method: 'upi', payment_reference: '' })
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -56,7 +56,7 @@ function CheckoutPage({ theme, onToggleTheme }) {
       setError('Enter a complete delivery address.')
       return
     }
-    if (!/^[A-Za-z0-9][A-Za-z0-9._/\-\s]{5,99}$/.test(form.payment_reference.trim())) {
+    if (form.payment_method === 'upi' && !/^[A-Za-z0-9][A-Za-z0-9._/\-\s]{5,99}$/.test(form.payment_reference.trim())) {
       setError('Enter a valid UTR or transaction reference after completing the UPI payment.')
       return
     }
@@ -67,7 +67,8 @@ function CheckoutPage({ theme, onToggleTheme }) {
         customer_name: form.customer_name.trim(),
         phone: form.phone.trim(),
         delivery_address: form.delivery_address.trim(),
-        payment_reference: form.payment_reference.trim(),
+        payment_method: form.payment_method,
+        payment_reference: form.payment_method === 'upi' ? form.payment_reference.trim() : '',
         items: items.map((item) => ({ product_id: item.id, quantity: item.quantity })),
       })
       saveCart({})
@@ -103,9 +104,10 @@ function CheckoutPage({ theme, onToggleTheme }) {
             <div className="form-field"><label htmlFor="checkout-name">Customer name</label><input className="form-control" id="checkout-name" name="customer_name" value={form.customer_name} onChange={updateField} autoComplete="name" required /></div>
             <div className="form-field"><label htmlFor="checkout-phone">Phone number</label><input className="form-control" id="checkout-phone" name="phone" value={form.phone} onChange={updateField} autoComplete="tel" inputMode="tel" required /></div>
             <div className="form-field"><label htmlFor="checkout-address">Delivery address</label><textarea className="form-control checkout-address" id="checkout-address" name="delivery_address" value={form.delivery_address} onChange={updateField} autoComplete="street-address" required /></div>
-            <div className="payment-choice checkout-payment-choice"><div className="payment-qr-wrap"><img className="payment-qr" src="/assets/fampay-qr.jpeg" alt="FamPay QR code for Knot &amp; Bloom payment" /></div><div className="payment-instructions"><strong>Pay securely with FamPay / UPI</strong><p>Scan this QR with any UPI app and pay the exact order amount.</p><span>Payee: Dabhani viren prakashbhai</span><span>UPI ID: 6353834366@fam</span><b>Amount: {formatPrice(total)}</b></div></div>
-            <div className="form-field"><label htmlFor="checkout-payment-reference">UTR / transaction reference</label><input className="form-control" id="checkout-payment-reference" name="payment_reference" value={form.payment_reference} onChange={updateField} autoComplete="off" inputMode="text" placeholder="Enter the reference shown by your UPI app" required /><small className="checkout-payment-note">Submitting a reference does not verify payment. An authorized Knot &amp; Bloom admin will review it.</small></div>
-            <button className="button-primary checkout-submit" type="submit" disabled={submitting}>{submitting ? 'Submitting payment details...' : `Submit payment details · ${formatPrice(total)}`}</button>
+            <div className="payment-method-options"><p className="form-field-label">Payment method</p><label className={`payment-method-option ${form.payment_method === 'cod' ? 'active' : ''}`}><input type="radio" name="payment_method" value="cod" checked={form.payment_method === 'cod'} onChange={updateField} /><span><strong>Cash on Delivery (COD)</strong><small>Pay when your order arrives.</small></span></label><label className={`payment-method-option ${form.payment_method === 'upi' ? 'active' : ''}`}><input type="radio" name="payment_method" value="upi" checked={form.payment_method === 'upi'} onChange={updateField} /><span><strong>Online Payment (UPI / QR Code)</strong><small>Pay now and submit the UTR for admin verification.</small></span></label></div>
+            {form.payment_method === 'upi' && <><div className="payment-choice checkout-payment-choice"><div className="payment-qr-wrap"><img className="payment-qr" src="/assets/fampay-qr.jpeg" alt="FamPay QR code for Knot &amp; Bloom payment" /></div><div className="payment-instructions"><strong>Pay securely with FamPay / UPI</strong><p>Scan this QR with any UPI app and pay the exact order amount.</p><span>Payee: Dabhani viren prakashbhai</span><span>UPI ID: 6353834366@fam</span><b>Amount: {formatPrice(total)}</b></div></div><div className="form-field"><label htmlFor="checkout-payment-reference">UTR / transaction reference</label><input className="form-control" id="checkout-payment-reference" name="payment_reference" value={form.payment_reference} onChange={updateField} autoComplete="off" inputMode="text" placeholder="Enter the reference shown by your UPI app" required /><small className="checkout-payment-note">Submitting a reference does not verify payment. An authorized Knot &amp; Bloom admin will review it.</small></div></>}
+            {form.payment_method === 'cod' && <p className="cod-payment-note">Your order will be created as Cash on Delivery. Payment remains pending until an authorized admin confirms collection.</p>}
+            <button className="button-primary checkout-submit" type="submit" disabled={submitting}>{submitting ? 'Submitting order...' : form.payment_method === 'cod' ? 'Place COD order' : `Submit payment details · ${formatPrice(total)}`}</button>
           </form>
           <aside className="glass-card checkout-summary">
             <p className="eyebrow">Order summary</p>

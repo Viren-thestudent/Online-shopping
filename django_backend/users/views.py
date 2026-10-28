@@ -1,4 +1,6 @@
-from django.db import IntegrityError, OperationalError
+from django.conf import settings
+from django.db import IntegrityError, OperationalError, transaction
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -10,6 +12,15 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from .models import User
 from .serializers import LoginSerializer, RegisterSerializer
+from .authorization import (
+    AUTHORIZED_ADMIN_EMAIL,
+    is_authorized_admin,
+    is_authorized_admin_candidate,
+    issue_verification_token,
+    send_verification_email,
+    tokens_match,
+    verification_path,
+)
 
 
 def error_response(message: str, response_status: int = status.HTTP_400_BAD_REQUEST) -> Response:
@@ -18,6 +29,17 @@ def error_response(message: str, response_status: int = status.HTTP_400_BAD_REQU
 
 def success_response(message: str, response_status: int = status.HTTP_200_OK, **data) -> Response:
     return Response({"success": True, "message": message, **data}, status=response_status)
+
+
+def account_access_payload(user: User) -> dict:
+    return {
+        "name": user.name,
+        "email": user.email,
+        "is_admin": user.is_admin,
+        "is_email_verified": user.email_verified,
+        "can_request_admin_verification": is_authorized_admin_candidate(user),
+        "can_access_admin": is_authorized_admin(user),
+    }
 
 
 class ORMJWTAuthentication(JWTAuthentication):
@@ -101,7 +123,7 @@ class LoginView(APIView):
         return success_response(
             "Login successful",
             token=create_access_token(user),
-            user={"name": user.name, "email": user.email, "is_admin": user.is_admin},
+            user=account_access_payload(user),
         )
 
 
@@ -112,11 +134,7 @@ class ProfileView(APIView):
     def get(self, request):
         return success_response(
             "Profile fetched successfully",
-            user={
-                "name": request.user.name,
-                "email": request.user.email,
-                "is_admin": request.user.is_admin,
-            },
+            user=account_access_payload(request.user),
         )
 
 
@@ -126,3 +144,71 @@ class LogoutView(APIView):
 
     def post(self, request):
         return success_response("Logout successful")
+
+
+class RequestEmailVerificationView(APIView):
+    authentication_classes = [ORMJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if not is_authorized_admin_candidate(request.user):
+            return error_response("Only the existing authorized admin account can request administrator verification.", status.HTTP_403_FORBIDDEN)
+        if request.user.email_verified:
+            return success_response("Administrator email is already verified.")
+
+        token = issue_verification_token(request.user)
+        verification_url = request.build_absolute_uri(verification_path(token))
+        using_console_backend = settings.EMAIL_BACKEND.endswith("console.EmailBackend")
+
+        try:
+            if not using_console_backend:
+                send_verification_email(request.user, verification_url)
+        except Exception:
+            return error_response("Email delivery is not configured or is temporarily unavailable.", status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        if using_console_backend:
+            if not settings.DEBUG:
+                return error_response("Email delivery is not configured.", status.HTTP_503_SERVICE_UNAVAILABLE)
+            return success_response(
+                "Development verification link generated; no email was sent.",
+                development_verification_url=verification_url,
+            )
+        return success_response("Verification email sent.")
+
+
+class VerifyEmailView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def _verify(self, token):
+        if not token or len(token) > 200:
+            return error_response("This verification link is invalid or expired.")
+
+        with transaction.atomic():
+            candidate = User.objects.select_for_update().filter(
+                email_verification_token_hash__isnull=False,
+            ).filter(
+                email__iexact=AUTHORIZED_ADMIN_EMAIL,
+            ).first()
+            if (
+                candidate is None
+                or not candidate.is_admin
+                or candidate.email_verified
+                or not tokens_match(candidate.email_verification_token_hash, token)
+                or candidate.email_verification_expires_at is None
+                or candidate.email_verification_expires_at <= timezone.now()
+            ):
+                return error_response("This verification link is invalid or expired.")
+
+            candidate.email_verified = True
+            candidate.email_verification_token_hash = None
+            candidate.email_verification_expires_at = None
+            candidate.save(update_fields=["email_verified", "email_verification_token_hash", "email_verification_expires_at", "updated_at"])
+
+        return success_response("Administrator email verified successfully.")
+
+    def post(self, request):
+        return self._verify(str(request.data.get("token", "")).strip())
+
+    def get(self, request):
+        return self._verify(str(request.query_params.get("token", "")).strip())

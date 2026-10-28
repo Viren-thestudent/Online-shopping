@@ -67,7 +67,8 @@ class CreateOrderSerializer(serializers.Serializer):
     customer_name = serializers.CharField(max_length=120, trim_whitespace=True)
     phone = serializers.CharField(max_length=30, trim_whitespace=True)
     delivery_address = serializers.CharField(min_length=5, trim_whitespace=True)
-    payment_reference = serializers.CharField(max_length=100, trim_whitespace=True)
+    payment_method = serializers.ChoiceField(choices=Order.PAYMENT_METHOD_CHOICES, default=Order.PAYMENT_ONLINE)
+    payment_reference = serializers.CharField(max_length=100, trim_whitespace=True, required=False, allow_blank=True)
     items = CheckoutItemSerializer(many=True, allow_empty=False)
 
     def validate_customer_name(self, value):
@@ -97,15 +98,25 @@ class CreateOrderSerializer(serializers.Serializer):
     def normalize_reference(value):
         return re.sub(r"\s+", "", value).upper()
 
-    def validate_payment_reference(self, value):
-        reference = self.normalize_reference(value)
+    def validate(self, attrs):
+        payment_method = attrs.get("payment_method", Order.PAYMENT_ONLINE)
+        reference = self.normalize_reference(attrs.get("payment_reference", ""))
+        if payment_method == Order.PAYMENT_COD:
+            if reference:
+                raise serializers.ValidationError({"payment_reference": "COD orders do not require a UTR or transaction reference."})
+            attrs["payment_reference"] = None
+            return attrs
+
+        if not reference:
+            raise serializers.ValidationError({"payment_reference": "A UTR or transaction reference is required for online payment."})
         if not re.fullmatch(r"[A-Z0-9][A-Z0-9._/-]{5,99}", reference):
-            raise serializers.ValidationError(
-                "Enter a valid UTR or transaction reference (6-100 letters, numbers, or - / _ .)."
-            )
+            raise serializers.ValidationError({
+                "payment_reference": "Enter a valid UTR or transaction reference (6-100 letters, numbers, or - / _ .)."
+            })
         if Order.objects.filter(payment_reference__iexact=reference).exists():
-            raise serializers.ValidationError("This payment reference has already been submitted.")
-        return reference
+            raise serializers.ValidationError({"payment_reference": "This payment reference has already been submitted."})
+        attrs["payment_reference"] = reference
+        return attrs
 
     def create(self, validated_data):
         request = self.context["request"]
@@ -132,8 +143,8 @@ class CreateOrderSerializer(serializers.Serializer):
             order = Order.objects.create(
                 customer=request.user,
                 total=Decimal("0.00"),
-                payment_method=Order.PAYMENT_ONLINE,
                 payment_status=Order.PAYMENT_STATUS_PENDING,
+                inventory_reserved=True,
                 **validated_data,
             )
             total = Decimal("0.00")
@@ -171,8 +182,11 @@ class AdminOrderStatusSerializer(serializers.ModelSerializer):
         fields = ("status",)
 
     def validate_status(self, value):
-        if value == Order.STATUS_DELIVERED and self.instance.payment_status != Order.PAYMENT_STATUS_VERIFIED:
-            raise serializers.ValidationError("Verify payment before marking an order as delivered.")
+        paid_statuses = {Order.STATUS_CONFIRMED, Order.STATUS_PROCESSING, Order.STATUS_SHIPPED, Order.STATUS_DELIVERED}
+        if value in paid_statuses and self.instance.payment_status != Order.PAYMENT_STATUS_VERIFIED:
+            raise serializers.ValidationError("Verify or collect payment before moving this order into fulfilment.")
+        if self.instance.status == Order.STATUS_DELIVERED and value != Order.STATUS_DELIVERED:
+            raise serializers.ValidationError("A delivered order cannot move backwards in the fulfilment workflow.")
         return value
 
 
@@ -186,6 +200,8 @@ class PaymentSubmissionSerializer(serializers.Serializer):
                 "Enter a valid UTR or transaction reference (6-100 letters, numbers, or - / _ .)."
             )
         order = self.context["order"]
+        if order.payment_method != Order.PAYMENT_ONLINE:
+            raise serializers.ValidationError("Only online-payment orders accept a UTR or transaction reference.")
         if order.payment_status == Order.PAYMENT_STATUS_VERIFIED:
             raise serializers.ValidationError("This payment has already been verified.")
         if order.payment_reference and order.payment_reference.upper() == reference:
@@ -211,8 +227,10 @@ class AdminPaymentStatusSerializer(serializers.ModelSerializer):
         fields = ("payment_status",)
 
     def validate_payment_status(self, value):
-        if value == Order.PAYMENT_STATUS_VERIFIED and not self.instance.payment_reference:
-            raise serializers.ValidationError("A submitted UTR is required before verification.")
+        if value == Order.PAYMENT_STATUS_VERIFIED and self.instance.payment_method == Order.PAYMENT_ONLINE and not self.instance.payment_reference:
+            raise serializers.ValidationError("A submitted UTR is required before verifying an online payment.")
+        if value == Order.PAYMENT_STATUS_REJECTED and self.instance.payment_method == Order.PAYMENT_COD:
+            raise serializers.ValidationError("COD remains pending until cash is collected; cancel the order if needed.")
         if self.instance.payment_status == Order.PAYMENT_STATUS_VERIFIED and value != Order.PAYMENT_STATUS_VERIFIED:
             raise serializers.ValidationError("A verified payment cannot be changed back to another status.")
         return value

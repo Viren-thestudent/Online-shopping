@@ -5,7 +5,7 @@ from .models import Category, Product
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "created_at", "updated_at")
+    list_display = ("name", "display_order", "created_at", "updated_at")
     search_fields = ("name", "description")
 
 

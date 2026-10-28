@@ -42,7 +42,7 @@ function LandingNavbar({ isAuthenticated, isAdmin, cartCount, menuOpen, onMenuTo
       </div>
       <nav className={`home-mobile-nav ${menuOpen ? 'open' : ''}`} aria-label="Mobile navigation">
         <a href="#home" onClick={onCloseMenu}>Home</a><Link to="/shop" onClick={onCloseMenu}>Shop</Link><a href="#collections" onClick={onCloseMenu}>Categories</a><a href="#story" onClick={onCloseMenu}>About</a><a href="#contact" onClick={onCloseMenu}>Contact</a>
-        {isAuthenticated ? <><Link to="/user-home" onClick={onCloseMenu}>Account</Link><Link to="/cart" onClick={onCloseMenu}>Cart ({cartCount})</Link>{isAdmin && <Link to="/admin/dashboard" onClick={onCloseMenu}>Admin dashboard</Link>}</> : <><Link to="/login" onClick={onCloseMenu}>Login</Link><Link to="/register" onClick={onCloseMenu}>Register</Link></>}
+        {isAuthenticated ? <><Link to="/user-home" onClick={onCloseMenu}>Account</Link><Link to="/cart" onClick={onCloseMenu}>Cart ({cartCount})</Link>{isAdmin && <Link to="/admin/dashboard" onClick={onCloseMenu}>Admin</Link>}</> : <><Link to="/login" onClick={onCloseMenu}>Login</Link><Link to="/register" onClick={onCloseMenu}>Register</Link></>}
       </nav>
     </header>
   )
@@ -60,8 +60,8 @@ function HomeProductCard({ product, onAdd }) {
 
 function LandingPage() {
   const isAuthenticated = Boolean(localStorage.getItem('token'))
-  const [isAdmin, setIsAdmin] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [categories, setCategories] = useState([])
   const [catalogue, setCatalogue] = useState([])
   const [cart, setCart] = useState(() => getCart())
@@ -78,8 +78,8 @@ function LandingPage() {
   useEffect(() => {
     if (!isAuthenticated) return undefined
     let active = true
+    fetchProfile().then((user) => { if (active) setIsAdmin(Boolean(user?.can_access_admin || user?.can_request_admin_verification)) }).catch(() => { if (active) setIsAdmin(false) })
     Promise.all([fetchCategories(), fetchProducts()]).then(([nextCategories, nextProducts]) => { if (active) { setCategories(nextCategories); setCatalogue(nextProducts) } }).catch(() => { if (active) { setCategories([]); setCatalogue([]) } }).finally(() => { if (active) setLoading(false) })
-    fetchProfile().then((user) => { if (active) setIsAdmin(Boolean(user?.is_admin)) }).catch(() => { if (active) setIsAdmin(false) })
     return () => { active = false }
   }, [isAuthenticated])
 

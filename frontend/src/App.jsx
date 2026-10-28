@@ -15,6 +15,7 @@ import AdminProductsPage from './Pages/Admin/AdminProductsPage'
 import AdminOrdersPage from './Pages/Admin/AdminOrdersPage'
 import AdminDashboardPage from './Pages/Admin/AdminDashboardPage'
 import AdminInsightsPage from './Pages/Admin/AdminInsightsPage'
+import EmailVerificationPage from './Pages/Common/EmailVerificationPage'
 import { fetchProfile } from './api/catalogueApi'
 import './App.css'
 
@@ -33,7 +34,8 @@ function AdminRoute({ children }) {
 
   if (state.loading) return <div className="page-shell"><main className="content-width admin-access-panel"><p className="eyebrow">Checking access</p><h1>Verifying your <em>studio role.</em></h1></main></div>
   if (state.error) return <div className="page-shell"><main className="content-width admin-access-panel"><p className="eyebrow">Access check failed</p><h1>Admin access could not be <em>verified.</em></h1><p>{state.error}</p><Link className="button-primary" to="/login">Return to login</Link></main></div>
-  if (!state.user?.is_admin) return <div className="page-shell"><main className="content-width admin-access-panel"><p className="eyebrow">Admin studio</p><h1>This space is for <em>authorized admins.</em></h1><p>Your account is authenticated, but it has not been granted catalogue admin access.</p><Link className="button-secondary" to="/shop">Return to shop</Link></main></div>
+  if (state.user?.is_admin && !state.user?.is_email_verified) return <Navigate to="/verify-email" replace />
+  if (!state.user?.can_access_admin) return <Navigate to="/user-home" replace />
   return children
 }
 
@@ -53,6 +55,7 @@ function App() {
         <Route path="/" element={<LandingPage theme={theme} onToggleTheme={toggleTheme} />} />
         <Route path="/register" element={<RegisterPage theme={theme} onToggleTheme={toggleTheme} />} />
         <Route path="/login" element={<LoginPage theme={theme} onToggleTheme={toggleTheme} />} />
+        <Route path="/verify-email" element={<ProtectedRoute><EmailVerificationPage theme={theme} onToggleTheme={toggleTheme} /></ProtectedRoute>} />
         <Route
           path="/user-home"
           element={

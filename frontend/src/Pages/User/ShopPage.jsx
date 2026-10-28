@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import UserNavbar from '../../Components/User/UserNavbar'
 import RecommendationSection from '../../Components/User/RecommendationSection'
 import SmartShoppingAssistant from '../../Components/User/SmartShoppingAssistant'
 import { fetchCategories, fetchProducts, fetchRecommendations } from '../../api/catalogueApi'
-import { cartItemCount, formatPrice, getCart, saveCart } from '../../data/catalogue'
+import { cartItemCount, formatPrice, getCart, PRODUCT_CATEGORIES, saveCart } from '../../data/catalogue'
 
 function ProductCard({ product, onAdd }) {
   return (
@@ -26,11 +26,11 @@ function ProductCard({ product, onAdd }) {
 }
 
 function ShopPage({ theme, onToggleTheme }) {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [categories, setCategories] = useState([])
   const [catalogue, setCatalogue] = useState([])
   const [cart, setCart] = useState(() => getCart())
   const [search, setSearch] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('all')
   const [sort, setSort] = useState('featured')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -81,6 +81,11 @@ function ShopPage({ theme, onToggleTheme }) {
     return () => { active = false }
   }, [recommendationSeed])
 
+  const requestedCategory = searchParams.get('category')
+  const selectedCategory = requestedCategory
+    ? String(categories.find((item) => item.name.toLowerCase() === requestedCategory.toLowerCase())?.id || 'missing-category')
+    : 'all'
+
   const products = useMemo(() => {
     const query = search.trim().toLowerCase()
     return catalogue
@@ -107,8 +112,14 @@ function ShopPage({ theme, onToggleTheme }) {
   const recommendationsAreLoading = Boolean(recommendationSeed) && !recommendationsForCurrentSeed
   const recommendationsDisplayError = recommendationsForCurrentSeed ? recommendationsError : ''
 
+  const chooseCategory = (categoryId) => {
+    const category = categories.find((item) => String(item.id) === String(categoryId))
+    if (category) setSearchParams({ category: category.name })
+    else setSearchParams({})
+  }
+
   return (
-    <div className="page-shell user-page" id="top">
+    <div className="page-shell user-page products-page" id="top">
       <UserNavbar theme={theme} onToggleTheme={onToggleTheme} cartCount={cartItemCount(cart)} />
       <main>
         <SmartShoppingAssistant products={catalogue} loading={loading} error={error} />
@@ -116,11 +127,11 @@ function ShopPage({ theme, onToggleTheme }) {
         <div className="content-width"><RecommendationSection title="Recommended for You" description="A live catalogue-based starting point; future behaviour data can make this personal." products={recommendationsToDisplay} loading={recommendationsAreLoading} error={recommendationsDisplayError} /></div>
         <section className="catalogue-section">
           <div className="content-width">
-            <div className="catalogue-toolbar glass-card"><label className="search-field"><span>Search</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder='Try "phone case" or "gift"' /></label><div className="category-filters" aria-label="Filter by category"><button className={selectedCategory === 'all' ? 'filter-chip active' : 'filter-chip'} type="button" onClick={() => setSelectedCategory('all')}>All pieces</button>{categories.map((category) => <button className={selectedCategory === String(category.id) ? 'filter-chip active' : 'filter-chip'} type="button" key={category.id} onClick={() => setSelectedCategory(String(category.id))}>{category.name}</button>)}</div><label className="sort-field"><span>Sort</span><select value={sort} onChange={(event) => setSort(event.target.value)}><option value="featured">Featured</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label></div>
+            <div className="catalogue-toolbar glass-card"><label className="search-field"><span>Search</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder='Try "phone case" or "gift"' /></label><div className="category-filters" aria-label="Filter by category"><button className={selectedCategory === 'all' ? 'filter-chip active' : 'filter-chip'} type="button" onClick={() => chooseCategory('all')}>All pieces</button>{categories.filter((category) => PRODUCT_CATEGORIES.includes(category.name)).sort((first, second) => PRODUCT_CATEGORIES.indexOf(first.name) - PRODUCT_CATEGORIES.indexOf(second.name)).map((category) => <button className={selectedCategory === String(category.id) ? 'filter-chip active' : 'filter-chip'} type="button" key={category.id} onClick={() => chooseCategory(String(category.id))}>{category.name}</button>)}</div><label className="sort-field"><span>Sort</span><select value={sort} onChange={(event) => setSort(event.target.value)}><option value="featured">Featured</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label></div>
             {notice && <div className="shop-notice" role="status">{notice} <Link to="/cart">View cart</Link></div>}
             <div className="catalogue-heading"><div><p className="eyebrow">The current edit</p><h2 className="section-title">Pieces made to <em>stay.</em></h2></div><span className="catalogue-count">{loading ? 'Loading...' : `${products.length} ${products.length === 1 ? 'piece' : 'pieces'}`}</span></div>
             {error && <div className="form-message error" role="alert">{error}</div>}
-            {loading ? <div className="glass-card empty-catalogue"><h3>Loading the live catalogue...</h3></div> : products.length ? <div className="product-grid">{products.map((product) => <ProductCard key={product.id} product={product} onAdd={addToCart} />)}</div> : <div className="glass-card empty-catalogue"><span className="empty-mark">-</span><h3>No pieces matched that search.</h3><p>Try another phrase or clear the category filter.</p><button className="button-secondary" type="button" onClick={() => { setSearch(''); setSelectedCategory('all') }}>Show all pieces</button></div>}
+            {loading ? <div className="glass-card empty-catalogue"><h3>Loading the live catalogue...</h3></div> : products.length ? <div className="product-grid">{products.map((product) => <ProductCard key={product.id} product={product} onAdd={addToCart} />)}</div> : <div className="glass-card empty-catalogue"><span className="empty-mark">-</span><h3>{selectedCategory !== 'all' ? 'This category is ready for its first piece.' : 'No pieces matched that search.'}</h3><p>{selectedCategory !== 'all' ? 'An authorized admin can add products to this category from the Admin Panel.' : 'Try another phrase or clear the category filter.'}</p><button className="button-secondary" type="button" onClick={() => { setSearch(''); chooseCategory('all') }}>Show all pieces</button></div>}
           </div>
         </section>
       </main>

@@ -17,6 +17,9 @@ class User(models.Model):
     email = models.EmailField(unique=True, db_index=True)
     password = models.CharField(max_length=128)
     is_admin = models.BooleanField(default=False)
+    email_verified = models.BooleanField(default=False)
+    email_verification_token_hash = models.CharField(max_length=64, blank=True, null=True)
+    email_verification_expires_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
